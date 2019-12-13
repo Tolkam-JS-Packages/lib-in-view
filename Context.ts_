@@ -1,0 +1,301 @@
+import { requestAnimationFrame } from '@tolkam/lib-raf';
+
+const DIR_NONE  = 0;
+const DIR_UP    = 1;
+const DIR_DOWN  = 2;
+const DIR_LEFT  = 3;
+const DIR_RIGHT = 4;
+
+/**
+ * Wrapper for scrolling (parent) element
+ */
+export default class Context {
+
+    /**
+     * Scroll direction constants
+     */
+    public DIR_NONE = DIR_NONE;
+    public DIR_UP = DIR_UP;
+    public DIR_DOWN = DIR_DOWN;
+    public DIR_LEFT = DIR_LEFT;
+    public DIR_RIGHT = DIR_RIGHT;
+
+    /**
+     * Last fired event
+     * @type {Event}
+     */
+    public event: Event | null = null;
+
+    /**
+     * Vertical scroll direction
+     * @type {string}
+     */
+    public scrollDirY: number = DIR_NONE;
+
+    /**
+     * Horizontal scroll direction
+     * @type {string}
+     */
+    public scrollDirX: number = DIR_NONE;
+
+    /**
+     * If element is a window instance flag
+     * @type {boolean}
+     */
+    protected _isWindow = true;
+
+    /**
+     * Last known scrollTop
+     * @type {Number}
+     */
+    protected _scrollTop = 0;
+
+    /**
+     * Last scrollTop difference to current one
+     * @type {Number}
+     */
+    protected _scrollTopDiff = 0;
+
+    /**
+     * Last known scrollLeft
+     * @type {Number}
+     */
+    protected _scrollLeft = 0;
+
+    /**
+     * Last scrollLeft difference to current one
+     * @type {Number}
+     */
+    protected _scrollLeftDiff = 0;
+
+    /**
+     * RAF ticking flag
+     * @type {Boolean}
+     */
+    protected _ticking: boolean;
+
+    /**
+     * Registered defaultView(window) events
+     * @type {string[]}
+     */
+    protected _windowEvents: string[] = [];
+
+    /**
+     * Bound listener
+     * @type {Function}
+     */
+    protected _boundListener: (e: Event) => void;
+
+    /**
+     * @param {HTMLElement | Window} element
+     */
+    public constructor(public readonly element: HTMLElement | Window) {
+        this._isWindow = isWindow(element);
+        this.populateScroll();
+    }
+
+    /**
+     * Gets top offset relative to viewport
+     *
+     * @return {number}
+     */
+    public top(): number {
+        return this._isWindow ? 0 : getRect(<HTMLElement>this.element).top;
+    }
+
+    /**
+     * Gets left offset relative to viewport
+     *
+     * @return {number}
+     */
+    public left(): number {
+        return this._isWindow ? 0 : getRect(<HTMLElement>this.element).left;
+    }
+
+    /**
+     * Gets scroll amount from top
+     *
+     * @return {number}
+     */
+    public scrollTop(): number {
+        return this._scrollTop;
+    }
+
+    /**
+     * Gets scroll amount from left
+     *
+     * @return {number}
+     */
+    public scrollLeft(): number {
+        return this._scrollLeft;
+    }
+
+    /**
+     * Gets top position difference compared to last event
+     *
+     * @return {number}
+     */
+    public scrollTopDiff(): number {
+        return this._scrollTopDiff;
+    }
+
+    /**
+     * Gets left position difference compared to last event
+     *
+     * @return {number}
+     */
+    public scrollLeftDiff(): number {
+        return this._scrollLeftDiff;
+    }
+
+    /**
+     * Gets inner height
+     *
+     * @return {number}
+     */
+    public innerHeight(): number {
+        return this.element[this._isWindow ? 'innerHeight' : 'clientHeight'];
+    }
+
+    /**
+     * Gets inner width
+     *
+     * @return {number}
+     */
+    public innerWidth(): number {
+        return this.element[this._isWindow ? 'innerWidth' : 'clientWidth'];
+    }
+
+    /**
+     * Starts listening context events
+     *
+     * @param {TEventHandler} handler
+     * @param {string[]}      windowEvents
+     * @return {void}
+     */
+    public listen(handler: TEventHandler, windowEvents?: string[]): void {
+        const that = this;
+        const { element } = that;
+
+        that._boundListener = that.listener.bind(that, handler);
+
+        // subscribe to default event
+        element.addEventListener('scroll', that._boundListener);
+
+        // subscribe to extra window events
+        if(windowEvents) {
+            that._windowEvents = windowEvents;
+            for(let i = 0; i < windowEvents.length; i++) {
+                getWindow(element).addEventListener(windowEvents[i], that._boundListener);
+            }
+        }
+    }
+
+    /**
+     * Stops listening context events
+     *
+     * @param {TEventHandler} handler
+     * @return {void}
+     */
+    public unlisten(handler: TEventHandler): void {
+        const that = this;
+        const { element, _windowEvents } = that;
+
+        element.removeEventListener('scroll', that._boundListener);
+
+        if(_windowEvents) {
+            for(let i = 0; i < _windowEvents.length; i++) {
+                getWindow(element).removeEventListener(_windowEvents[i], that._boundListener);
+            }
+        }
+    }
+
+    /**
+     * Event listener
+     *
+     * @param {TEventHandler} handler
+     * @param {Event}         e
+     * @return {void}
+     */
+    protected listener(handler: TEventHandler, e: Event): void {
+        const that = this;
+
+        // store event ref
+        that.event = e;
+
+        // throttled events
+        if(['scroll', 'resize'].indexOf(e.type) !== -1) {
+            if (!that._ticking) {
+                that._ticking = true;
+                requestAnimationFrame(function() {
+                    that._ticking = false;
+                    that.populateScroll();
+                    handler(e);
+                });
+            }
+
+        } else {
+            that.populateScroll();
+            handler(e);
+        }
+    }
+
+    /**
+     * Populates scroll position and calculates scroll direction
+     *
+     * @return {void}
+     */
+    protected populateScroll = () => {
+        const that = this;
+        const element = that.element;
+        const isWin = that._isWindow;
+
+        const scrollTop = element[isWin ? 'pageYOffset' : 'scrollTop'];
+        const scrollLeft = element[isWin ? 'pageXOffset' : 'scrollLeft'];
+
+        that._scrollTopDiff = scrollTop - that._scrollTop;
+        that._scrollLeftDiff = scrollLeft - that._scrollLeft;
+
+        that.scrollDirY = scrollTop === that._scrollTop ? DIR_NONE
+            : scrollTop > that._scrollTop ? DIR_DOWN : DIR_UP;
+
+        that.scrollDirX = scrollLeft === that._scrollLeft ? DIR_NONE
+            : scrollLeft > that._scrollLeft ? DIR_RIGHT : DIR_LEFT;
+
+        that._scrollTop = scrollTop;
+        that._scrollLeft = scrollLeft;
+    }
+}
+
+/**
+ * Checks if element is Window
+ *
+ * @param {Element | Window} element
+ */
+function isWindow(element: Element | Window): boolean {
+    return element instanceof Window && element === element.window;
+}
+
+/**
+ * Gets element's window
+ *
+ * @param  {HTMLElement | Window}  element
+ * @return {Window}
+ */
+function getWindow(element: HTMLElement | Window): Window {
+    return isWindow(element)
+        ? (element as Window)
+        : (element as HTMLElement).ownerDocument.defaultView;
+}
+
+/**
+ * Gets BoundingClientRect
+ * @param {HTMLElement} element
+ */
+function getRect(element: HTMLElement) {
+    return element.getBoundingClientRect();
+}
+
+export type TEventHandler = (e: Event) => void;
+
+export interface IContext extends Context {};
