@@ -269,7 +269,6 @@ function getElement(element: HTMLElement | Document): HTMLElement {
     return isDoc(element) ? element.documentElement : element;
 }
 
-
 /**
  * Gets BoundingClientRect
  * @param {HTMLElement} element
