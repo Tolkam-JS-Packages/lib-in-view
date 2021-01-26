@@ -60,6 +60,15 @@ export default class InView {
     }
 
     /**
+     * Forces recalculation
+     *
+     * @return {void}
+     */
+    public recalculate = () => {
+        this.eventsHandler();
+    };
+
+    /**
      * Stops listening of context events
      *
      */
@@ -71,8 +80,7 @@ export default class InView {
      * Handles context events
      */
     protected eventsHandler = () => {
-        const { subject, context, options, getSubjectPosition } = this;
-        const offset = options.offset!;
+        const { context, options, getSubjectPosition } = this;
 
         // stop if scrolled less than defined minimum pixels
         const scrollAmount = options.scrollAmount || {top: 0, left: 0};

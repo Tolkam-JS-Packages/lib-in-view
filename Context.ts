@@ -159,6 +159,7 @@ export default class Context {
      *
      * @param {TEventHandler} handler
      * @param {string[]}      windowEvents
+     *
      * @return {void}
      */
     public listen(handler: TEventHandler, windowEvents?: string[]): void {
@@ -183,6 +184,7 @@ export default class Context {
      * Stops listening context events
      *
      * @param {TEventHandler} handler
+     *
      * @return {void}
      */
     public unlisten(handler: TEventHandler): void {
@@ -203,6 +205,7 @@ export default class Context {
      *
      * @param {TEventHandler} handler
      * @param {Event}         e
+     *
      * @return {void}
      */
     protected listener(handler: TEventHandler, e: Event): void {

@@ -1,5 +1,3 @@
-import Context from "./Context";
-
 /**
  * Wrapper for tracking (child) element
  */
