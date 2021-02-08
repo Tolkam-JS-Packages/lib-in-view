@@ -47,6 +47,16 @@ export default class Subject {
     }
 
     /**
+     * Checks if rendered on screen
+     *
+     * @return {boolean}
+     */
+    public isRendered(): boolean {
+        const el = this.element;
+        return !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
+    }
+
+    /**
      * Gets height
      *
      * @param  {boolean} withMargins

@@ -80,7 +80,7 @@ export default class InView {
      * Handles context events
      */
     protected eventsHandler = () => {
-        const { context, options, getSubjectPosition } = this;
+        const { context, subject, options, getSubjectPosition } = this;
 
         // stop if scrolled less than defined minimum pixels
         const scrollAmount = options.scrollAmount || {top: 0, left: 0};
@@ -117,6 +117,7 @@ export default class InView {
         const overflowX = childLeft <= parentLeft && childRight >= parentRight;
 
         const visibility = {
+            rendered: subject.isRendered(),
             visible: (topVisible || bottomVisible || overflowY) && (leftVisible || rightVisible || overflowX),
             topLeft: topVisible && leftVisible,
             topRight: topVisible && rightVisible,
@@ -202,6 +203,7 @@ export interface IOptions {
 }
 
 export interface IVisibility {
+    rendered: boolean; // rendered on screen and takes place
     visible: boolean;
     topLeft: boolean;
     topRight: boolean;
