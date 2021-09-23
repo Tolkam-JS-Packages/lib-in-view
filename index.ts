@@ -1,4 +1,4 @@
-import Context, { IContext, TEventHandler } from './Context';
+import Context, { IContext } from './Context';
 import Subject, { ISubject } from './Subject';
 
 /**
@@ -187,7 +187,7 @@ export default class InView {
 export interface IOptions {
 
     // Scrolling parent element, defaults to window
-    context?: HTMLElement;
+    context?: HTMLElement|Document;
 
     // window events to listen to besides context's scroll event
     windowEvents?: string[];
