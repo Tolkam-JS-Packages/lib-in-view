@@ -1,6 +1,7 @@
 {
     "name": "@tolkam/lib-in-view",
     "description": "Tracks element visibility relative to its scrolling parent",
+    "version": "0.0.0",
     "browser": "index.ts",
     "types": "index.ts",
     "license": "UNLICENSED",
